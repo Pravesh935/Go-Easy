@@ -19,6 +19,7 @@ public class Vehicle {
 	private String city;
 	private String avlStatus;
 	private Double pricePerKm;
+	private double avgspeed;
 
 	@OneToOne
 	@MapsId
