@@ -1,18 +1,21 @@
 package com.ride.goeasy.controller;
 
-import java.util.Optional;
+
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ride.goeasy.dto.CustomerDTO;
-import com.ride.goeasy.entity.Customer;
+import com.ride.goeasy.dto.CustomerResponseDTO;
+
+import com.ride.goeasy.response.ResponseStructure;
 import com.ride.goeasy.service.CustomerService;
 
 @RestController
@@ -23,24 +26,26 @@ public class CustomerController {
 	    private CustomerService customerService;
 
 	    
-//	    Register customer method
-	    @PostMapping("/registerCustomer")
-	    public Customer addCustomer(@RequestBody CustomerDTO dto) {
+	    @PostMapping("/register")
+	    public ResponseStructure<CustomerResponseDTO> saveCustomer(@RequestBody CustomerDTO dto) {
 	        return customerService.saveCustomer(dto);
 	    }
-	    
-	    
-	    
-	    // Find customer by mobile number
+
 	    @GetMapping("/find")
-	    public Optional<Customer> getCustomerByMobNo(@RequestParam Long mobno) {
-	        return customerService.findCustomerByMobNo(mobno);
+	    public ResponseStructure<CustomerResponseDTO> findCustomer(@RequestParam Long mobno) {
+	        return customerService.findCustomer(mobno);
 	    }
 
-	    // Delete customer by mobile number
 	    @DeleteMapping("/delete")
-	    public String deleteCustomerByMobNo(@RequestParam Long mobno) {
-	        return customerService.deleteCustomerByMobNo(mobno);
+	    public ResponseStructure<CustomerResponseDTO> deleteCustomer(@RequestParam Long mobno) {
+	        return customerService.deleteCustomer(mobno);
+	    }
+
+	    @PutMapping("/update")
+	    public ResponseStructure<CustomerResponseDTO> updateCustomer(
+	            @RequestParam Long mobno,
+	            @RequestBody CustomerDTO dto) {
+	        return customerService.updateCustomer(mobno, dto);
 	    }
 	    
 	    

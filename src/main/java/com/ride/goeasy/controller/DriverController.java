@@ -1,8 +1,9 @@
 package com.ride.goeasy.controller;
 
-import java.util.Optional;
+
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 
 import com.ride.goeasy.entity.Driver;
+import com.ride.goeasy.response.ResponseStructure;
 import com.ride.goeasy.service.DriverService;
 
 @RestController
@@ -25,17 +27,34 @@ public class DriverController {
 	// to perform save operation
 
 	@PostMapping("/save")
-	public Driver saveDriverVehicle(@RequestBody Driver driver) {
+	public ResponseStructure<Driver> saveDriverWithVehicle(@RequestBody Driver driver) {
 		return driverService.saveDriverWithVehicle(driver);
 	}
+	
+	
 
 	// find operation
 	@GetMapping("/find")
-	public Optional<Driver> find(@RequestParam int id) {
-		Optional<Driver> d = driverService.find(id);
-		return d;
+	public ResponseStructure<Driver> find(@RequestParam int id) {
+		return driverService.find(id);
+	}
+	
+	
+//	Delete Driver by id
+	@DeleteMapping("/delete")
+	public ResponseStructure<Driver> delete(@RequestParam int id) {
+		return driverService.deleteDriverById(id);
 	}
 
 	
+	
+//	@PutMapping("/update")
+	public ResponseStructure<Driver> updateDriver(
+	        @RequestParam int id,
+	        @RequestBody Driver newData) {
+
+	    return driverService.updateDriver(id, newData);
+	}
+
 
 }

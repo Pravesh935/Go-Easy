@@ -38,7 +38,7 @@ public class Booking {
 
 	public Booking(int id, Customer customer, Driver driver, String sourceLocation, String destinationLocation,
 			Double distance, Double fare, String estimatedTime, String bookingStatus) {
-
+		super();
 		this.id = id;
 		this.customer = customer;
 		this.driver = driver;
@@ -60,7 +60,6 @@ public class Booking {
 
 	public Customer getCustomer() {
 		return customer;
-
 	}
 
 	public void setCustomer(Customer customer) {
@@ -122,4 +121,6 @@ public class Booking {
 	public void setBookingStatus(String bookingStatus) {
 		this.bookingStatus = bookingStatus;
 	}
+
+	
 }

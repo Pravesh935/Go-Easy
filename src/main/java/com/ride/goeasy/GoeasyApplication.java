@@ -17,4 +17,6 @@ public class GoeasyApplication {
 	    public RestTemplate restTemplate() {
 	        return new RestTemplate();
 	    }
+	   
+	  
 }
