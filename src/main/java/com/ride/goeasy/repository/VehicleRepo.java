@@ -17,7 +17,7 @@ public interface VehicleRepo extends JpaRepository<Vehicle, Integer> {
 	
 
 	// Find by city
-	@Query("SELECT v FROM Vehicle v WHERE v.avlStatus = 'Available' AND v.city = :city")
+	@Query("SELECT v FROM Vehicle v WHERE v.avlStatus = 'AVAILABLE' AND v.city = :city")
 	List<Vehicle> findAvailableVehiclesInCity(String city);
 
 }
