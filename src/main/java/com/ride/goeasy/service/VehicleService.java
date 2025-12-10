@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -17,21 +18,24 @@ import com.ride.goeasy.entity.Customer;
 import com.ride.goeasy.entity.Vehicle;
 import com.ride.goeasy.exception.CustomerNotFoundException;
 import com.ride.goeasy.exception.InvalidLocationException;
+import com.ride.goeasy.exception.VehicleNotFoundException;
 import com.ride.goeasy.repository.CustomerRepo;
 import com.ride.goeasy.repository.VehicleRepo;
+import com.ride.goeasy.response.ResponseStructure;
 
 @Service
 public class VehicleService {
 
-    @Autowired
-    private CustomerRepo customerRepo;
+	@Autowired
+	private CustomerRepo customerRepo;
 
-    @Autowired
-    private VehicleRepo vehicleRepo;
+	@Autowired
+	private VehicleRepo vehicleRepo;
 
-    @Autowired
-    private RestTemplate restTemplate;
+	@Autowired
+	private RestTemplate restTemplate;
 
+<<<<<<< HEAD
     @Value("${locationiq.api.key}")
     private String apiKey;
 //it will give location based on latitude and longitude
@@ -39,100 +43,113 @@ public class VehicleService {
 
 //it will give the estimation time to travel and destination location
     private final String MATRIX_API = "https://us1.locationiq.com/v1/matrix/driving/";
+=======
+	@Value("${locationiq.api.key}")
+	private String apiKey;
 
-    public AvailableVehicleDTO getAvailableVehicles(Long mobile, String destinationLocation) {
+	private final String LOCATION_API = "https://us1.locationiq.com/v1/search";
 
-        // STEP 1: Validate & Fetch Coordinates of Destination
-    	String url = LOCATION_API 
-                + "?key=" + apiKey 
-                + "&q=" + destinationLocation 
-                + "&format=json";
+	private final String MATRIX_API = "https://us1.locationiq.com/v1/matrix/driving/";
 
-   LocationResponse[] locationRes =
-           restTemplate.getForObject(url, LocationResponse[].class);
+	public AvailableVehicleDTO getAvailableVehicles(Long mobile, String destinationLocation) {
+>>>>>>> c2c952ec89b1d7ab1db862988a3f4d4531dd7dc9
 
+		// STEP 1: Validate & Fetch Coordinates of Destination
+		String url = LOCATION_API + "?key=" + apiKey + "&q=" + destinationLocation + "&format=json";
 
+		LocationResponse[] locationRes = restTemplate.getForObject(url, LocationResponse[].class);
 
-        if (locationRes == null || locationRes.length == 0) {
-            throw new InvalidLocationException("Invalid Destination Location");
-        }
+		if (locationRes == null || locationRes.length == 0) {
+			throw new InvalidLocationException("Invalid Destination Location");
+		}
 
-        double destLat = Double.parseDouble(locationRes[0].getLat());
-        double destLon = Double.parseDouble(locationRes[0].getLon());
+		double destLat = Double.parseDouble(locationRes[0].getLat());
+		double destLon = Double.parseDouble(locationRes[0].getLon());
 
-        // STEP 2: Verify Customer
-        Customer customer = customerRepo.findByMobno(mobile)
-                .orElseThrow(() -> new CustomerNotFoundException(
-                        "Customer Not Found with Mobile: " + mobile));
+		// STEP 2: Verify Customer
+		Customer customer = customerRepo.findByMobno(mobile)
+				.orElseThrow(() -> new CustomerNotFoundException("Customer Not Found with Mobile: " + mobile));
 
-        String[] src = customer.getCurrentLocation().split(",");
-        double srcLat = Double.parseDouble(src[0]);
-        double srcLon = Double.parseDouble(src[1]);
+		String[] src = customer.getCurrentLocation().split(",");
+		double srcLat = Double.parseDouble(src[0]);
+		double srcLon = Double.parseDouble(src[1]);
 
-        // STEP 3: Get Distance & Time (Matrix API)
-        String finalURL = MATRIX_API + srcLon + "," + srcLat + ";" + destLon + "," + destLat
-                + "?key=" + apiKey + "&annotations=distance,duration";
+		// STEP 3: Get Distance & Time (Matrix API)
+		String finalURL = MATRIX_API + srcLon + "," + srcLat + ";" + destLon + "," + destLat + "?key=" + apiKey
+				+ "&annotations=distance,duration";
 
-        MatrixResponse matrixResponse = restTemplate.getForObject(finalURL, MatrixResponse.class);
+		MatrixResponse matrixResponse = restTemplate.getForObject(finalURL, MatrixResponse.class);
 
-        double distance = matrixResponse.getDistances().get(0).get(1) / 1000.0; // meters → km
+		double distance = matrixResponse.getDistances().get(0).get(1) / 1000.0; // meters → km
 
- 
-     // STEP 4: Reverse Geocoding to get City Name
-        String reverseUrl = "https://us1.locationiq.com/v1/reverse?key=" + apiKey
-                + "&lat=" + srcLat
-                + "&lon=" + srcLon
-                + "&format=json";
+		String reverseUrl = "https://us1.locationiq.com/v1/reverse?key=" + apiKey + "&lat=" + srcLat + "&lon=" + srcLon
+				+ "&format=json";
 
-        ReverseGeoResponse reverseResponse =
-                restTemplate.getForObject(reverseUrl, ReverseGeoResponse.class);
+		ReverseGeoResponse reverseResponse = restTemplate.getForObject(reverseUrl, ReverseGeoResponse.class);
 
-        String city = reverseResponse.getAddress().getCity();
+		String city = reverseResponse.getAddress().getCity();
 
-      
+		// Update vehicles with city before fetching available ones or saving them
+		List<Vehicle> allVehicles = vehicleRepo.findAll(); // ya sirf new vehicles jahan city null ho
+		for (Vehicle v : allVehicles) {
+			if (v.getCity() == null) {
+				v.setCity(city);
+				vehicleRepo.save(v);
+			}
+		}
 
-        
-        
-     // Update vehicles with city before fetching available ones or saving them
-        List<Vehicle> allVehicles = vehicleRepo.findAll(); // ya sirf new vehicles jahan city null ho
-        for (Vehicle v : allVehicles) {
-            if (v.getCity() == null) {
-                v.setCity(city);
-                vehicleRepo.save(v);
-            }
-        }
+		// Fetch Available Vehicles in the city
+		List<Vehicle> availableVehicles = vehicleRepo.findAvailableVehiclesInCity(city);
 
-        // Fetch Available Vehicles in the city
-        List<Vehicle> availableVehicles = vehicleRepo.findAvailableVehiclesInCity(city);
-        
-        List<VehicleDetailDTO> vehicleDetails = new ArrayList<>();
+		List<VehicleDetailDTO> vehicleDetails = new ArrayList<>();
+		System.out.println(availableVehicles);
+		// STEP 5: Fare and Time Calculation
+		for (Vehicle v : availableVehicles) {
+			VehicleDetailDTO dto = new VehicleDetailDTO();
+			dto.setModel(v.getVehicleModel());
+			dto.setVehicleNumber(v.getVehicleNumber());
+			dto.setPricePerKm(v.getPricePerKm());
+			dto.setAverageSpeed(v.getAvgspeed());
 
+			double fare = v.getPricePerKm() * distance;
+			double time = distance / v.getAvgspeed();
 
-        // STEP 5: Fare and Time Calculation
-        for (Vehicle v : availableVehicles) {
-            VehicleDetailDTO dto = new VehicleDetailDTO();
-            dto.setModel(v.getVehicleModel());
-            dto.setVehicleNumber(v.getVehicleNumber());
-            dto.setPricePerKm(v.getPricePerKm());
-            dto.setAverageSpeed(v.getAvgspeed());
+			dto.setEstimatedFare(fare);
+			dto.setEstimatedTime(time);
 
-            double fare = v.getPricePerKm() * distance;
-            double time = distance / v.getAvgspeed();
+			vehicleDetails.add(dto);
+		}
+		
+	
+		
+		
+		
+		
+		
 
-            dto.setEstimatedFare(fare);
-            dto.setEstimatedTime(time);
+		// STEP 6: Prepare Final Response
+		AvailableVehicleDTO response = new AvailableVehicleDTO();
+		response.setCustomer(customer);
+		response.setDistance(distance);
+		response.setSource(customer.getCurrentLocation());
+		response.setDestination(destinationLocation);
+		response.setVehicles(vehicleDetails);
 
-            vehicleDetails.add(dto);
-        }
+		return response;
+	}
+	
+//	// finding vehicle by vehicle number
+//	public ResponseStructure<Vehicle> findByVno(String vehicleNumber){
+//
+//	    Vehicle vehicle = vehicleRepo.findByVehicleNumber(vehicleNumber)
+//	            .orElseThrow(() -> new VehicleNotFoundException("Vehicle Not Found with vehicleNumber: " + vehicleNumber));
+//
+//	    ResponseStructure<Vehicle> rs = new ResponseStructure<>();
+//	    rs.setData(vehicle);
+//	    rs.setMessage("Vehicle found successfully");
+//	    rs.setStatusCode(HttpStatus.OK.value());
+//
+//	    return rs;
+//	}
 
-        // STEP 6: Prepare Final Response
-        AvailableVehicleDTO response = new AvailableVehicleDTO();
-        response.setCustomer(customer);
-        response.setDistance(distance);
-        response.setSource(customer.getCurrentLocation());
-        response.setDestination(destinationLocation);
-        response.setVehicles(vehicleDetails);
-
-        return response;
-    }
 }
