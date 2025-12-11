@@ -4,6 +4,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToOne;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.*;
@@ -23,12 +25,32 @@ public class Driver {
 	private String gender;
 	private String mailId;
 
+<<<<<<< HEAD
 	@OneToOne(mappedBy = "driver", cascade = CascadeType.ALL)
 	@JsonManagedReference
 	private Vehicle vehicle;
 
 	public Driver() {
 	}
+=======
+    @OneToOne(mappedBy = "driver", cascade = CascadeType.ALL)
+    @JsonManagedReference
+    private Vehicle vehicle;
+    
+    @OneToMany
+    List<Booking> dblist;
+
+    public List<Booking> getDblist() {
+		return dblist;
+	}
+
+	public void setDblist(List<Booking> dblist) {
+		this.dblist = dblist;
+	}
+
+	public Driver() {
+    }
+>>>>>>> 4d96f0ce0cb6920c270ad32d8b44efedb4575d87
 
 	public Driver(String dname, String licNo, String upiId, String dstatus, Integer age, Long mobNo, String gender,
 			String mailId, Vehicle vehicle) {

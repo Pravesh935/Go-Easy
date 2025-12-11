@@ -34,6 +34,8 @@ public class Booking {
 
 	private String bookingStatus; // BOOKED, CANCELLED, COMPLETED
 	
+	private boolean activeBookingFlag;
+	
 	@OneToOne
 	private Payment payment;
 
@@ -51,6 +53,8 @@ public class Booking {
 		this.payment = payment;
 	}
 
+	
+
 	public int getId() {
 		return id;
 	}
@@ -64,6 +68,22 @@ public class Booking {
 	public void setCustomer(Customer customer) {
 		this.customer = customer;
 	}
+
+	
+
+
+
+	public boolean isActiveBookingFlag() {
+		return activeBookingFlag;
+	}
+
+
+
+	public void setActiveBookingFlag(boolean activeBookingFlag) {
+		this.activeBookingFlag = activeBookingFlag;
+	}
+
+
 
 	public Vehicle getVehicle() {
 		return vehicle;
