@@ -35,24 +35,15 @@ public class VehicleService {
 	@Autowired
 	private RestTemplate restTemplate;
 
-<<<<<<< HEAD
-    @Value("${locationiq.api.key}")
-    private String apiKey;
-//it will give location based on latitude and longitude
-    private final String LOCATION_API = "https://us1.locationiq.com/v1/search";
-
-//it will give the estimation time to travel and destination location
-    private final String MATRIX_API = "https://us1.locationiq.com/v1/matrix/driving/";
-=======
 	@Value("${locationiq.api.key}")
 	private String apiKey;
 
 	private final String LOCATION_API = "https://us1.locationiq.com/v1/search";
 
+//it will give the estimation time to travel and destination location
 	private final String MATRIX_API = "https://us1.locationiq.com/v1/matrix/driving/";
 
 	public AvailableVehicleDTO getAvailableVehicles(Long mobile, String destinationLocation) {
->>>>>>> c2c952ec89b1d7ab1db862988a3f4d4531dd7dc9
 
 		// STEP 1: Validate & Fetch Coordinates of Destination
 		String url = LOCATION_API + "?key=" + apiKey + "&q=" + destinationLocation + "&format=json";
@@ -119,13 +110,6 @@ public class VehicleService {
 
 			vehicleDetails.add(dto);
 		}
-		
-	
-		
-		
-		
-		
-		
 
 		// STEP 6: Prepare Final Response
 		AvailableVehicleDTO response = new AvailableVehicleDTO();
@@ -137,7 +121,7 @@ public class VehicleService {
 
 		return response;
 	}
-	
+
 //	// finding vehicle by vehicle number
 //	public ResponseStructure<Vehicle> findByVno(String vehicleNumber){
 //

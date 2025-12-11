@@ -34,11 +34,7 @@ public class DriverController {
 		return driverService.find(id);
 	}
 
-<<<<<<< HEAD
-	
-	
-=======
->>>>>>> c2c952ec89b1d7ab1db862988a3f4d4531dd7dc9
+  
 //	Delete Driver by id
 
 	@DeleteMapping("/delete")

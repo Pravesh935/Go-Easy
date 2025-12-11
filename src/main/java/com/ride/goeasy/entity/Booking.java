@@ -121,8 +121,7 @@ public class Booking {
 		this.bookingStatus = bookingStatus;
 	}
 
-<<<<<<< HEAD
-=======
+
 	public Payment getPayment() {
 		return payment;
 	}
@@ -139,6 +138,5 @@ public class Booking {
 
 	 
 
-	
->>>>>>> c2c952ec89b1d7ab1db862988a3f4d4531dd7dc9
+
 }
