@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.ride.goeasy.entity.Booking;
 import com.ride.goeasy.entity.Customer;
 import com.ride.goeasy.entity.Driver;
+import com.ride.goeasy.entity.Payment;
 import com.ride.goeasy.entity.Vehicle;
 import com.ride.goeasy.response.ResponseStructure;
 
@@ -71,6 +72,19 @@ public class GlobalExceptionHandler {
 		rs.setData(null);
 		return rs;
 	}
+	
+	// Payment Exception
+	@ExceptionHandler(PaymentNotFoundException.class)
+	public ResponseStructure<Payment> handlePaymentNotFound(PaymentNotFoundException ex) {
+
+	    ResponseStructure<Payment> rs = new ResponseStructure<>();
+	    rs.setStatusCode(HttpStatus.NOT_FOUND.value());
+	    rs.setMessage(ex.getMessage());
+	    rs.setData(null);
+
+	    return rs;
+	}
+}
  
 		 
-}
+
