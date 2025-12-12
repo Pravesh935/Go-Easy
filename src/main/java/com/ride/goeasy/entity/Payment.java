@@ -3,11 +3,9 @@ package com.ride.goeasy.entity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-<<<<<<< HEAD
-//import jakarta.persistence.ManyToOne;
-=======
+
 import jakarta.persistence.ManyToOne;
->>>>>>> 4d96f0ce0cb6920c270ad32d8b44efedb4575d87
+
 import jakarta.persistence.OneToOne;
 
 
@@ -15,7 +13,7 @@ import jakarta.persistence.OneToOne;
 @Entity
 public class Payment {
 
-<<<<<<< HEAD
+
 	@Id
 	private String paymentId;
 
@@ -193,6 +191,6 @@ public class Payment {
     public void setPaymentStatus(String paymentStatus) {
         this.paymentStatus = paymentStatus;
     }
->>>>>>> 4d96f0ce0cb6920c270ad32d8b44efedb4575d87
+
 }
 

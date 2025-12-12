@@ -25,14 +25,14 @@ public class Driver {
 	private String gender;
 	private String mailId;
 
-<<<<<<< HEAD
+
 	@OneToOne(mappedBy = "driver", cascade = CascadeType.ALL)
 	@JsonManagedReference
 	private Vehicle vehicle;
 
 	public Driver() {
 	}
-=======
+
     @OneToOne(mappedBy = "driver", cascade = CascadeType.ALL)
     @JsonManagedReference
     private Vehicle vehicle;
@@ -50,7 +50,6 @@ public class Driver {
 
 	public Driver() {
     }
->>>>>>> 4d96f0ce0cb6920c270ad32d8b44efedb4575d87
 
 	public Driver(String dname, String licNo, String upiId, String dstatus, Integer age, Long mobNo, String gender,
 			String mailId, Vehicle vehicle) {
