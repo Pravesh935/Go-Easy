@@ -65,10 +65,11 @@ public class DriverController {
 	    return bookingService.getDriverBookingHistory(mobNo);
 	}
 
-	@GetMapping("/activeBooking")
-	public ResponseStructure<Booking> activeBooking(@RequestParam long mobNo) {
-	    return bookingService.getDriverActiveBooking(mobNo);
-	}
+//	@GetMapping("/activeBooking")
+//	public ResponseStructure<Booking> activeBooking(@RequestParam long mobNo) {
+//	    return bookingService.getDriverActiveBooking(mobNo);
+//	    
+//	}
 	
 	
 

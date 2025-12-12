@@ -1,8 +1,12 @@
 package com.ride.goeasy.response;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+
+@JsonPropertyOrder({"message", "statusCode", "data"})
 public class ResponseStructure<T> {
-	private int statusCode;
+	
 	private String message;
+	private int statusCode;
 	private T data;
 	
 	

@@ -3,8 +3,15 @@ package com.ride.goeasy.dto;
 public class LocationResponse {
 	 private String lat;
 	    private String lon;
+	    private String type;
 
-	    public String getLat() {
+	    public String getType() {
+			return type;
+		}
+		public void setType(String type) {
+			this.type = type;
+		}
+		public String getLat() {
 	        return lat;
 	    }
 	    public void setLat(String lat) {

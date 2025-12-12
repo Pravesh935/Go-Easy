@@ -11,10 +11,14 @@ import org.springframework.web.client.RestTemplate;
 
 import com.ride.goeasy.dto.BookingHistoryDTO;
 import com.ride.goeasy.dto.BookingRequestDTO;
-import com.ride.goeasy.dto.ReverseGeoResponse;
+import com.ride.goeasy.dto.LocationResponse;
+
 import com.ride.goeasy.entity.Booking;
 import com.ride.goeasy.entity.Customer;
 import com.ride.goeasy.entity.Vehicle;
+import com.ride.goeasy.exception.CustomerNotFoundException;
+import com.ride.goeasy.exception.InvalidLocationException;
+import com.ride.goeasy.exception.VehicleNotFoundException;
 import com.ride.goeasy.repository.BookingRepo;
 import com.ride.goeasy.repository.CustomerRepo;
 
@@ -44,39 +48,74 @@ public class BookingService {
 		// STEP 1: Prevent booking if same city
 		if (bookingRequestDTO.getSourceLocation().trim()
 				.equalsIgnoreCase(bookingRequestDTO.getDestinationLocation().trim())) {
-			throw new IllegalArgumentException("Source and destination cannot be the same.");
+			throw new InvalidLocationException("Source and destination cannot be the same.");
 		}
 
 		// STEP 2: Fetch Customer
-		Customer cust = customerRepo.findByMobno(mobno).orElseThrow(() -> new RuntimeException("Customer Not Found"));
+		Customer cust = customerRepo.findByMobno(mobno).orElseThrow(() -> new CustomerNotFoundException("Customer Not Found"));
 
 		// STEP 3: Fetch Vehicle
 		Vehicle vehicle = vr.findByVehicleNumber(bookingRequestDTO.getVehicleNumber())
-				.orElseThrow(() -> new RuntimeException("Vehicle Not Found"));
+				.orElseThrow(() -> new VehicleNotFoundException("Vehicle Not Found"));
+		
+		
 
-		// ⭐⭐ STEP 4: Convert Source Lat/Lon → City Name ⭐⭐
-		String[] srcArr = bookingRequestDTO.getSourceLocation().split(",");
-		double srcLat = Double.parseDouble(srcArr[0]);
-		double srcLon = Double.parseDouble(srcArr[1]);
+		// ⭐⭐ STEP 4: Convert Source City → Coordinates ⭐⭐
+		String sourceCity = bookingRequestDTO.getSourceLocation().trim();
+		String srcUrl = "https://us1.locationiq.com/v1/search?key=" + apiKey +
+		                "&q=" + sourceCity + "&format=json";
 
-		String reverseUrl = "https://us1.locationiq.com/v1/reverse?key=" + apiKey + "&lat=" + srcLat + "&lon=" + srcLon
-				+ "&format=json";
+		LocationResponse[] srcResponse = restTemplate.getForObject(srcUrl, LocationResponse[].class);
 
-		ReverseGeoResponse reverseResponse = restTemplate.getForObject(reverseUrl, ReverseGeoResponse.class);
-		String sourceCity = reverseResponse.getAddress().getCity();
+		// If response is null or empty array, city is invalid
+		if (srcResponse == null || srcResponse.length == 0) {
+		    throw new InvalidLocationException("Invalid source city: " + sourceCity);
+		}
+
+		// Accept only if type = "city"
+		boolean validCity = false;
+		for (LocationResponse loc : srcResponse) {
+		    String type = loc.getType();
+		    if ("city".equalsIgnoreCase(type) || 
+		        "town".equalsIgnoreCase(type) || 
+		        "administrative".equalsIgnoreCase(type)) {
+		        validCity = true;
+		        break;
+		    }
+		}
+
+		if (!validCity) {
+		    throw new InvalidLocationException("Invalid city: " + sourceCity);
+		}
+
+		// Safe to use coordinates now
+		double latitude = Double.parseDouble(srcResponse[0].getLat());
+		double longitude = Double.parseDouble(srcResponse[0].getLon());
+
+		 
+
 
 		// STEP 5: Create Booking
-		 
-		
+		List<Booking> list = bookingRepo.findByCustomerMobno(mobno);
+		for (Booking bh : list) {
+			if (bh.isActiveBookingFlag() == true) {
+				ResponseStructure<Booking> rs = new ResponseStructure<Booking>();
+				rs.setStatusCode(HttpStatus.CREATED.value());
+				rs.setMessage("Your ride has not completed -> You can only book after the completion of current ride.");
+				rs.setData(null);
+
+				return rs;
+			}
+		}
 		Booking b = new Booking();
 		b.setCustomer(cust);
 		b.setVehicle(vehicle);
-		b.setSourceLocation(sourceCity); 
+		b.setSourceLocation(sourceCity);
 		b.setDestinationLocation(bookingRequestDTO.getDestinationLocation());
 		b.setFare(bookingRequestDTO.getFare());
 		b.setDistance(bookingRequestDTO.getDistance());
 		b.setEstimatedTime(bookingRequestDTO.getEstimatedTime());
-		b.setBookingStatus("PENDING");
+		b.setBookingStatus("Booked");
 		b.setPayment(null);
 
 		// STEP 6: Save
@@ -85,21 +124,21 @@ public class BookingService {
 		// STEP 7: Response
 		ResponseStructure<Booking> rs = new ResponseStructure<>();
 		rs.setStatusCode(HttpStatus.CREATED.value());
-		rs.setMessage("Vehicle booked successfully");
+		rs.setMessage(" Vehicle booked successfully");
 		rs.setData(savedBooking);
 
 		return rs;
+
 	}
 
-	
-	
-//	Cutomer Booking History
+//	Customer Booking History
 	public ResponseStructure<List<BookingHistoryDTO>> getCustomerBookingHistory(long mobno) {
 
 		List<Booking> list = bookingRepo.findByCustomerMobno(mobno);
-		List<BookingHistoryDTO> l= new ArrayList<BookingHistoryDTO>();
-		for(Booking b: list) {
-			BookingHistoryDTO bhdto= new BookingHistoryDTO();
+		List<BookingHistoryDTO> l = new ArrayList<BookingHistoryDTO>();
+		for (Booking b : list) {
+
+			BookingHistoryDTO bhdto = new BookingHistoryDTO();
 			bhdto.setBookingId(b.getId());
 			bhdto.setCustomerName(b.getCustomer().getName());
 			bhdto.setBookingStatus(b.getBookingStatus());
@@ -110,7 +149,7 @@ public class BookingService {
 			bhdto.setFare(b.getFare());
 			bhdto.setPaymentStatus("Done");
 			bhdto.setVehicleType(b.getVehicle().getVehicleType());
-			
+
 			l.add(bhdto);
 		}
 
@@ -118,56 +157,53 @@ public class BookingService {
 		rs.setStatusCode(200);
 		rs.setMessage("Customer Booking History");
 		rs.setData(l);
-           
+
 		return rs;
 	}
-	
-	
+
 //	Active Booking 
 	public ResponseStructure<BookingHistoryDTO> getCustomerActiveBooking(long mobno) {
-        
-		
-	   List< Booking> blist = (List<Booking>) bookingRepo.findByCustomerMobnoAndBookingStatus(mobno, "PENDING");
-	   for(Booking b: blist ) {
-        if(b.isActiveBookingFlag()==true) {
-        	BookingHistoryDTO bhdto= new BookingHistoryDTO();
-			bhdto.setBookingId(b.getId());
-			bhdto.setCustomerName(b.getCustomer().getName());
-			bhdto.setBookingStatus(b.getBookingStatus());
-			bhdto.setDestinationLocation(b.getDestinationLocation());
-			bhdto.setSourceLocation(b.getSourceLocation());
-			bhdto.setDistance(b.getDistance());
-			bhdto.setEstimatedTime(b.getEstimatedTime());
-			bhdto.setFare(b.getFare());
-			bhdto.setPaymentStatus("Done");
-			bhdto.setVehicleType(b.getVehicle().getVehicleType());
-        
-	    ResponseStructure<BookingHistoryDTO> rs = new ResponseStructure<>();
-	    rs.setStatusCode(200);
-	    rs.setMessage("Customer Active Booking");
-	    rs.setData(bhdto);
 
-	    return rs;
-        }
-	   }
-       
-		BookingHistoryDTO bhdto= new BookingHistoryDTO();
-    	ResponseStructure<BookingHistoryDTO> rs = new ResponseStructure<>();
-  	    rs.setStatusCode(200);
-  	    rs.setMessage("Customer Active Booking");
-  	    rs.setData(null);
-  	    return rs;
+		List<Booking> blist = (List<Booking>) bookingRepo.findByCustomerMobnoAndBookingStatus(mobno, "PENDING");
+		for (Booking b : blist) {
+			if (b.isActiveBookingFlag() == true) {
+				BookingHistoryDTO bhdto = new BookingHistoryDTO();
+				bhdto.setBookingId(b.getId());
+				bhdto.setCustomerName(b.getCustomer().getName());
+				bhdto.setBookingStatus(b.getBookingStatus());
+				bhdto.setDestinationLocation(b.getDestinationLocation());
+				bhdto.setSourceLocation(b.getSourceLocation());
+				bhdto.setDistance(b.getDistance());
+				bhdto.setEstimatedTime(b.getEstimatedTime());
+				bhdto.setFare(b.getFare());
+				bhdto.setPaymentStatus("Done");
+				bhdto.setVehicleType(b.getVehicle().getVehicleType());
+
+				ResponseStructure<BookingHistoryDTO> rs = new ResponseStructure<>();
+				rs.setStatusCode(200);
+				rs.setMessage("Customer Active Booking");
+				rs.setData(bhdto);
+
+				return rs;
+			}
+		}
+
+		BookingHistoryDTO bhdto = new BookingHistoryDTO();
+		ResponseStructure<BookingHistoryDTO> rs = new ResponseStructure<>();
+		rs.setStatusCode(200);
+		rs.setMessage("Customer Active Booking");
+		rs.setData(null);
+		return rs;
 	}
-	
-	
+
 //	Driver booking history
 	public ResponseStructure<List<BookingHistoryDTO>> getDriverBookingHistory(long mobNo) {
 
-	    List<Booking> list = bookingRepo.findByVehicleDriverMobNo(mobNo);
-	    
-	    List<BookingHistoryDTO> l= new ArrayList<BookingHistoryDTO>();
-		for(Booking b: list) {
-			BookingHistoryDTO bhdto= new BookingHistoryDTO();
+		List<Booking> list = bookingRepo.findByVehicleDriverMobNo(mobNo);
+
+		List<BookingHistoryDTO> l = new ArrayList<BookingHistoryDTO>();
+		for (Booking b : list) {
+			BookingHistoryDTO bhdto = new BookingHistoryDTO();
 			bhdto.setBookingId(b.getId());
 			bhdto.setCustomerName(b.getCustomer().getName());
 			bhdto.setBookingStatus(b.getBookingStatus());
@@ -178,32 +214,16 @@ public class BookingService {
 			bhdto.setFare(b.getFare());
 			bhdto.setPaymentStatus("Payment not yet completed");
 			bhdto.setVehicleType(b.getVehicle().getVehicleType());
-			
+
 			l.add(bhdto);
 		}
 
-	    ResponseStructure<List<BookingHistoryDTO>> rs = new ResponseStructure<>();
-	    rs.setStatusCode(200);
-	    rs.setMessage("Driver Booking History");
-	    rs.setData(l);
+		ResponseStructure<List<BookingHistoryDTO>> rs = new ResponseStructure<>();
+		rs.setMessage("Driver Booking History");
+		rs.setStatusCode(200);
+		rs.setData(l);
 
-	    return rs;
-	}
-	
-//	Driver Active
-	public ResponseStructure<Booking> getDriverActiveBooking(long mobNo) {
-
-	    Booking booking = bookingRepo.findByVehicleDriverMobNoAndBookingStatus(mobNo, "PENDING");
-
-	    ResponseStructure<Booking> rs = new ResponseStructure<>();
-	    rs.setStatusCode(200);
-	    rs.setMessage("Driver Active Booking");
-	    rs.setData(booking);
-
-	    return rs;
+		return rs;
 	}
 
-
-
-	
 }

@@ -128,18 +128,18 @@ public class VehicleService {
 		return response;
 	}
 	
-//	// finding vehicle by vehicle number
-//	public ResponseStructure<Vehicle> findByVno(String vehicleNumber){
-//
-//	    Vehicle vehicle = vehicleRepo.findByVehicleNumber(vehicleNumber)
-//	            .orElseThrow(() -> new VehicleNotFoundException("Vehicle Not Found with vehicleNumber: " + vehicleNumber));
-//
-//	    ResponseStructure<Vehicle> rs = new ResponseStructure<>();
-//	    rs.setData(vehicle);
-//	    rs.setMessage("Vehicle found successfully");
-//	    rs.setStatusCode(HttpStatus.OK.value());
-//
-//	    return rs;
-//	}
+	// finding vehicle by vehicle number
+	public ResponseStructure<Vehicle> findByVno(String vehicleNumber){
+
+	    Vehicle vehicle = vehicleRepo.findByVehicleNumber(vehicleNumber)
+	            .orElseThrow(() -> new VehicleNotFoundException("Vehicle Not Found with vehicleNumber: " + vehicleNumber));
+
+	    ResponseStructure<Vehicle> rs = new ResponseStructure<>();
+	    rs.setData(vehicle);
+	    rs.setMessage("Vehicle found successfully");
+	    rs.setStatusCode(HttpStatus.OK.value());
+
+	    return rs;
+	}
 
 }
