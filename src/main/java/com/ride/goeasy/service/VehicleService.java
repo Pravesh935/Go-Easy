@@ -79,14 +79,7 @@ public class VehicleService {
 
 		String city = reverseResponse.getAddress().getCity();
 
-		// Update vehicles with city before fetching available ones or saving them
-		List<Vehicle> allVehicles = vehicleRepo.findAll(); // ya sirf new vehicles jahan city null ho
-		for (Vehicle v : allVehicles) {
-			if (v.getCity() == null) {
-				v.setCity(city);
-				vehicleRepo.save(v);
-			}
-		}
+		
 
 		// Fetch Available Vehicles in the city
 		List<Vehicle> availableVehicles = vehicleRepo.findAvailableVehiclesInCity(city);

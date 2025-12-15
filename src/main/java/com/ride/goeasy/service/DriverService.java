@@ -3,8 +3,10 @@ package com.ride.goeasy.service;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -13,6 +15,7 @@ import java.net.URL;
 
 
 import com.ride.goeasy.dto.BookingHistoryDTO;
+import com.ride.goeasy.dto.LocationResponse;
 import com.ride.goeasy.dto.PaymentByCashDTO;
 import com.ride.goeasy.dto.PaymentByUpiDTO;
 import com.ride.goeasy.dto.RideDetailsDTO;
@@ -39,7 +42,7 @@ public class DriverService {
 	DriverRepo driverRepo;
 	@Autowired
 	BookingRepo bookingRepo;
-//	Save Driver method
+
 	@Autowired
 	PaymentRepo paymentRepo;
 	@Autowired
@@ -48,18 +51,72 @@ public class DriverService {
 	VehicleRepo vehicleRepo;
 	@Autowired
 	BookingService bs;
+	
+	@Autowired
+	private RestTemplate restTemplate;
+	
+	
+	@Value("${locationiq.api.key}")
+	private String apiKey;
+
+	private final String LOCATION_API = "https://us1.locationiq.com/v1/search";
+
+	private final String MATRIX_API = "https://us1.locationiq.com/v1/matrix/driving/";
+	
+	private final String REVERSE_API = "https://us1.locationiq.com/v1/reverse";
+
 
 	public ResponseStructure<Driver> saveDriverWithVehicle(Driver driver) {
 
-		Driver savedDriver = driverRepo.save(driver);
+	    Vehicle vehicle = driver.getVehicle();
 
-		ResponseStructure<Driver> rs = new ResponseStructure<>();
-		rs.setStatusCode(HttpStatus.CREATED.value());
-		rs.setMessage("Driver Saved Successfully");
-		rs.setData(savedDriver);
+	    // 🔴 VALIDATION
+	    if (vehicle.getLatitude() == null || vehicle.getLongitude() == null) {
+	        throw new RuntimeException("Latitude and Longitude are required");
+	    }
 
-		return rs;
+	    // 🔹 Reverse Geocoding (lat/lon -> city)
+	    String url = REVERSE_API
+	            + "?key=" + apiKey
+	            + "&lat=" + vehicle.getLatitude()
+	            + "&lon=" + vehicle.getLongitude()
+	            + "&format=json";
+
+	    LocationResponse location =
+	            restTemplate.getForObject(url, LocationResponse.class);
+
+	    if (location == null || location.getAddress() == null) {
+	        throw new RuntimeException("Unable to fetch city from coordinates");
+	    }
+
+	    // 🔹 Safe city extraction
+	    String city = location.getAddress().getCity();
+	    if (city == null) city = location.getAddress().getTown();
+	    if (city == null) city = location.getAddress().getCounty();
+	    if (city == null) city = location.getAddress().getState();
+
+	    if (city == null) {
+	        throw new RuntimeException("City not found from given coordinates");
+	    }
+
+	    // 🔹 SET CITY
+	    vehicle.setCity(city);
+
+	    // 🔹 RELATIONSHIP
+	    vehicle.setDriver(driver);
+	    driver.setVehicle(vehicle);
+
+	    // 🔹 SAVE (ONLY ONCE)
+	    Driver savedDriver = driverRepo.save(driver);
+
+	    ResponseStructure<Driver> rs = new ResponseStructure<>();
+	    rs.setStatusCode(HttpStatus.CREATED.value());
+	    rs.setMessage("Driver Saved Successfully");
+	    rs.setData(savedDriver);
+
+	    return rs;
 	}
+
 
 //	Find Diver By ID
 	public ResponseStructure<Driver> find(int id) {

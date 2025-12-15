@@ -35,6 +35,8 @@ public class Driver {
     
     @OneToMany
     List<Booking> dblist;
+    
+   
 
     public List<Booking> getDblist() {
 		return dblist;
@@ -135,7 +137,7 @@ public class Driver {
 
     public void setVehicle(Vehicle vehicle) {
         this.vehicle = vehicle;
-        vehicle.setDriver(this);
+        vehicle.setDriver(this);   
     }
 
     @Override
