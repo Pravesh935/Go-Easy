@@ -9,7 +9,7 @@ public class RideDetailsDTO {
 
     private Double distance;
     private Double fare;
-   
+    private double totalAmt;
 
     private String bookingStatus;
 
@@ -55,7 +55,13 @@ public class RideDetailsDTO {
 		this.fare = fare;
 	}
 
-	 
+	public double getTotalAmt() {
+		return totalAmt;
+	}
+
+	public void setTotalAmt(double totalAmt) {
+		this.totalAmt = totalAmt;
+	}
 
 	public String getBookingStatus() {
 		return bookingStatus;

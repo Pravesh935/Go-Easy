@@ -64,7 +64,10 @@ public class DriverController {
 	
 	
 	
-	
+	@GetMapping("/seeBookingHistory")
+	public ResponseStructure< BookingHistoryDTO> history(@RequestParam long mobNo) {
+	    return driverService.getDriverBookingHistory(mobNo);
+	}
 	
 	
 
@@ -79,19 +82,17 @@ public class DriverController {
 	    	return driverService.confirmPaymnetByCash(bookingId , paymentType);
 	    }
 	
-//	
-//	@PostMapping("/payByUPI")
-//	public ResponseStructure<PaymentByUpiDTO> confirmPaymentByUPI(@RequestParam int bookingId){
-//		return driverService.confirmPaymentByUPI(bookingId);
-//	
-//	}
-	@PostMapping("/confirmPayByUpi")
-	 public ResponseStructure<PaymentByCashDTO> confirmPaymentByUPI(@RequestParam int bookingId, @RequestParam String paymentType){
-    	return driverService.confirmPaymnetByUPI(bookingId , paymentType);
-    }
-	@GetMapping("/seeBookingHistory")
-	public ResponseStructure< BookingHistoryDTO> history(@RequestParam long mobNo) {
-	    return driverService.getDriverBookingHistory(mobNo);
+	
+	@PostMapping("/confirmUpiPayment")
+	public ResponseStructure<PaymentByUpiDTO> confirmUpiPayment(@RequestParam int bookingId){
+	    return driverService.confirmUpiPaymentSuccess(bookingId);
 	}
+
+	@PostMapping("/generateUpiQr")
+	public ResponseStructure<PaymentByUpiDTO> generateUpiQr(@RequestParam int bookingId){
+	    return driverService.confirmPaymentByUPI(bookingId);
+	}
+
+	
 	
 }

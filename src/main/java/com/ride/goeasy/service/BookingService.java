@@ -19,6 +19,7 @@ import com.ride.goeasy.entity.Customer;
 import com.ride.goeasy.entity.Driver;
 import com.ride.goeasy.entity.Payment;
 import com.ride.goeasy.entity.Vehicle;
+import com.ride.goeasy.enums.BookingStatus;
 import com.ride.goeasy.exception.CustomerNotFoundException;
 import com.ride.goeasy.exception.InvalidLocationException;
 import com.ride.goeasy.exception.VehicleNotFoundException;
@@ -124,7 +125,7 @@ public class BookingService {
 		b.setFare(bookingRequestDTO.getFare());
 		b.setDistance(bookingRequestDTO.getDistance());
 		b.setEstimatedTime(bookingRequestDTO.getEstimatedTime());
-		b.setBookingStatus("Booked");
+		b.setBookingStatus(BookingStatus.BOOKED);
 		b.setPayment(p);
 		b.setActiveBookingFlag(true);
 	  cust.getBookings().add(b);
@@ -158,15 +159,16 @@ public class BookingService {
 		List<RideDetailsDTO> list= new ArrayList<RideDetailsDTO>();
         double totalAmount=0;
         for(Booking b :blist) {
-        	 if (!"COMPLETED".equalsIgnoreCase(b.getBookingStatus())) {
-                 continue;
-             }
+        	if (b.getBookingStatus() != BookingStatus.COMPLETED) {
+        	    continue;
+        	}
+
 
        	 RideDetailsDTO rdto= new RideDetailsDTO();
        	 rdto.setBookingId(b.getId());
        	 rdto.setSourceLocation(b.getSourceLocation());
        	 rdto.setDestinationLocation(b.getDestinationLocation());
-       	 rdto.setBookingStatus(b.getBookingStatus());
+       	rdto.setBookingStatus(b.getBookingStatus().name());
        	 rdto.setDistance(b.getDistance());
        	 rdto.setFare(b.getFare());
        	 totalAmount+=b.getFare();
@@ -200,7 +202,8 @@ public class BookingService {
 				  rdto.setSourceLocation(b.getSourceLocation());
 				  rdto.setDestinationLocation(b.getDestinationLocation());
 				  rdto.setDistance(b.getDistance());
-				  rdto.setBookingStatus(b.getBookingStatus());
+				  rdto.setBookingStatus(b.getBookingStatus().name());
+
 				  rdto.setFare(b.getFare());
 				  
 				  ResponseStructure<RideDetailsDTO> rs = new ResponseStructure<>();

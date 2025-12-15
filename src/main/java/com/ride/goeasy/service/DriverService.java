@@ -1,11 +1,16 @@
 package com.ride.goeasy.service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
 
 import com.ride.goeasy.dto.BookingHistoryDTO;
 import com.ride.goeasy.dto.PaymentByCashDTO;
@@ -16,8 +21,8 @@ import com.ride.goeasy.entity.Customer;
 import com.ride.goeasy.entity.Driver;
 import com.ride.goeasy.entity.Payment;
 import com.ride.goeasy.entity.Vehicle;
+import com.ride.goeasy.enums.BookingStatus;
 import com.ride.goeasy.exception.BookingNotFoundException;
-import com.ride.goeasy.exception.CustomerNotFoundException;
 import com.ride.goeasy.exception.DriverNotFoundException;
 import com.ride.goeasy.repository.BookingRepo;
 import com.ride.goeasy.repository.CustomerRepo;
@@ -117,6 +122,32 @@ public class DriverService {
 		return rs;
 	}
 	
+	
+	private byte[] generateQrCode(String upiString) {
+	    try {
+	        String qrUrl =
+	            "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + upiString;
+
+	        URL url = new URL(qrUrl);
+	        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+	        conn.setRequestMethod("GET");
+
+	        InputStream is = conn.getInputStream();
+	        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+	        byte[] buffer = new byte[1024];
+	        int read;
+	        while ((read = is.read(buffer)) != -1) {
+	            baos.write(buffer, 0, read);
+	        }
+
+	        return baos.toByteArray();
+	    } catch (Exception e) {
+	        throw new RuntimeException("QR generation failed");
+	    }
+	}
+
+	
 	//payment by cash
 
 	public ResponseStructure<PaymentByCashDTO> confirmPaymnetByCash(int bookingId ,String paymentType) {
@@ -129,7 +160,8 @@ public class DriverService {
 	private ResponseStructure<PaymentByCashDTO> confirmPay(int bookingId, String paymentType) {
 		Booking b = bookingRepo.findById(bookingId)
 				.orElseThrow(() -> new BookingNotFoundException("Booking not found with id:" + bookingId));
-		b.setBookingStatus("COMPLETED");
+		b.setBookingStatus(BookingStatus.COMPLETED);
+
 		Customer c = b.getCustomer();
 		c.setActiveBookingFlag(false);
 
@@ -167,11 +199,7 @@ public class DriverService {
 		return rs;
 	}
 
-	//payment by upi
-
-	public ResponseStructure<PaymentByCashDTO> confirmPaymnetByUPI(int bookingId, String paymentType) {
-		return confirmPay(bookingId, paymentType);
-	}
+	
 	
 	
 	
@@ -196,5 +224,105 @@ public class DriverService {
 		 List<Booking> blist= d.getDblist();
 	     return bs.activeBookingHistory(blist);
 	}
+	
+	
+	
+	
+	
+	
+
+
+	public ResponseStructure<PaymentByUpiDTO> confirmPaymentByUPI(int bookingId) {
+
+	    Booking b = bookingRepo.findById(bookingId)
+	        .orElseThrow(() -> new BookingNotFoundException("Booking not found"));
+
+	    Vehicle v = b.getVehicle();
+	    Driver d = v.getDriver();
+	    Customer c = b.getCustomer();
+
+	    double fare = b.getFare();
+
+	    // 🔹 Create UPI intent
+	    String upiString =
+	        "upi://pay?pa=" + d.getUpiId()
+	        + "&pn=" + d.getDname()
+	        + "&am=" + fare
+	        + "&cu=INR";
+
+	    // 🔹 Generate QR
+	    byte[] qrBytes = generateQrCode(upiString);
+
+	    // 🔹 Payment pending
+	    Payment p = b.getPayment();
+	    if ("PAID".equalsIgnoreCase(p.getPaymentStatus())) {
+	        throw new RuntimeException("Payment already completed");
+	    }
+	    p.setPaymentType("UPI");
+	    p.setPaymentStatus("PENDING");
+	    p.setAmount(fare);
+
+	    paymentRepo.save(p);
+
+	    // 🔹 DTO
+	    PaymentByUpiDTO dto = new PaymentByUpiDTO();
+	    dto.setBookingId(b.getId());
+	    dto.setCustomerId(c.getId());
+	    dto.setDriverId(d.getId());
+	    dto.setAmount(fare);
+	    dto.setPaymentType("UPI");
+	    dto.setPaymentStatus("PENDING");
+	    dto.setQr(qrBytes);
+
+	    ResponseStructure<PaymentByUpiDTO> rs = new ResponseStructure<>();
+	    rs.setStatusCode(HttpStatus.OK.value());
+	    rs.setMessage("Scan QR to pay via UPI");
+	    rs.setData(dto);
+
+	    return rs;
+	}
+	
+	
+	
+	public ResponseStructure<PaymentByUpiDTO> confirmUpiPaymentSuccess(int bookingId) {
+
+	    Booking b = bookingRepo.findById(bookingId)
+	        .orElseThrow(() -> new BookingNotFoundException("Booking not found"));
+
+	    b.setBookingStatus(BookingStatus.COMPLETED);
+
+	    Customer c = b.getCustomer();
+	    c.setActiveBookingFlag(false);
+
+	    Vehicle v = b.getVehicle();
+	    v.setAvlStatus("AVAILABLE");
+
+	    Payment p = b.getPayment();
+	    p.setPaymentStatus("PAID");
+	    p.setPaymentType("UPI");
+	    p.setAmount(b.getFare());
+
+	    paymentRepo.save(p);
+	    bookingRepo.save(b);
+	    customerRepo.save(c);
+	    vehicleRepo.save(v);
+
+	    PaymentByUpiDTO dto = new PaymentByUpiDTO();
+	    dto.setBookingId(b.getId());
+	    dto.setCustomerId(c.getId());
+	    dto.setDriverId(v.getDriver().getId());
+	    dto.setAmount(b.getFare());
+	    dto.setPaymentType("UPI");
+	    dto.setPaymentStatus("PAID");
+
+	    ResponseStructure<PaymentByUpiDTO> rs = new ResponseStructure<>();
+	    rs.setStatusCode(HttpStatus.OK.value());
+	    rs.setMessage("UPI Payment Successful");
+	    rs.setData(dto);
+
+	    return rs;
+	}
+
+
 
 }
