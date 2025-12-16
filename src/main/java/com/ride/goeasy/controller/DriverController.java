@@ -84,7 +84,7 @@ public class DriverController {
 	    return driverService.confirmUpiPaymentSuccess(bookingId);
 	}
 
-	@PostMapping("/generateUpiQr")
+	@GetMapping("/generateUpiQr")
 	public ResponseStructure<PaymentByUpiDTO> generateUpiQr(@RequestParam int bookingId){
 	    return driverService.confirmPaymentByUPI(bookingId);
 	}
