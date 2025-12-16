@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import com.ride.goeasy.entity.Booking;
+import com.ride.goeasy.entity.Driver;
+import com.ride.goeasy.enums.BookingStatus;
 
 @Repository
 public interface BookingRepo extends JpaRepository<Booking, Integer>{
@@ -22,7 +24,16 @@ public interface BookingRepo extends JpaRepository<Booking, Integer>{
 
 	    //  DRIVER ACTIVE BOOKING
 	    Booking findByVehicleDriverMobNoAndBookingStatus(Long mobNo, String bookingStatus);
+	    
+	    
+	    
+	    
+	    
 	
+	    List<Booking> findByVehicleDriverAndBookingStatus(
+	            Driver driver,
+	            BookingStatus bookingStatus
+	    );
 
 
 }

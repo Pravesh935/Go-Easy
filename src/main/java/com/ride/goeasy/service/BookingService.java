@@ -224,6 +224,50 @@ public class BookingService {
 		 
 		
 	}
+	
+	
+	// Booking Cancel by Driver 
+	
+	public ResponseStructure<String> cancelBookingByDriver(int bookingId) {
+
+	    Booking booking = bookingRepo.findById(bookingId)
+	            .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+	    Driver driver = booking.getVehicle().getDriver();
+	    Customer customer = booking.getCustomer();
+
+	    // Count how many times driver cancelled
+	    List<Booking> cancelledList =
+	            bookingRepo.findByVehicleDriverAndBookingStatus(
+	                    driver,
+	                    BookingStatus.CANCELLED_BY_DRIVER
+	            );
+
+	    int cancelCount = cancelledList.size();
+
+	    // Cancel booking
+	    booking.setBookingStatus(BookingStatus.CANCELLED_BY_DRIVER);
+	    booking.setActiveBookingFlag(false);
+
+	    // Reset customer active booking
+	    customer.setActiveBookingFlag(false);
+
+	    // Block driver if more than 4 cancels
+	    if (cancelCount >= 4) {
+	        driver.setDstatus("BLOCKED");
+	    }
+
+	    bookingRepo.save(booking);
+	    dr.save(driver);
+	    customerRepo.save(customer);
+
+	    ResponseStructure<String> rs = new ResponseStructure<>();
+	    rs.setStatusCode(HttpStatus.OK.value());
+	    rs.setMessage("Booking cancelled by driver");
+	    rs.setData(null);
+
+	    return rs;
+	}
 
 
 	 

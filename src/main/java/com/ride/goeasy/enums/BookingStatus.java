@@ -4,6 +4,9 @@ public enum BookingStatus {
 	    BOOKED,
 	    ONGOING,
 	    COMPLETED,
-	    CANCELLED
+	    CANCELLED,
+	    
+	    CANCELLED_BY_DRIVER,
+	    CANCELLED_BY_CUSTOMER
 
 }
