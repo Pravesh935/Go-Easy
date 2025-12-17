@@ -221,6 +221,7 @@ public class DriverService {
 
 		Customer c = b.getCustomer();
 		c.setActiveBookingFlag(false);
+		c.setCancellationCount(0);
 
 		Vehicle v = b.getVehicle();
 		v.setAvlStatus("AVAILABLE");
@@ -350,6 +351,7 @@ public class DriverService {
 
 	    Customer c = b.getCustomer();
 	    c.setActiveBookingFlag(false);
+	    c.setCancellationCount(0);
 
 	    Vehicle v = b.getVehicle();
 	    v.setAvlStatus("AVAILABLE");
