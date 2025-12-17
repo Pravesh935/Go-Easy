@@ -8,12 +8,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-
-
 import com.ride.goeasy.dto.BookingHistoryDTO;
 import com.ride.goeasy.dto.LocationResponse;
 import com.ride.goeasy.dto.PaymentByCashDTO;
@@ -34,7 +28,6 @@ import com.ride.goeasy.repository.PaymentRepo;
 import com.ride.goeasy.repository.VehicleRepo;
 import com.ride.goeasy.response.ResponseStructure;
 
-
 @Service
 public class DriverService {
 
@@ -51,72 +44,68 @@ public class DriverService {
 	VehicleRepo vehicleRepo;
 	@Autowired
 	BookingService bs;
-	
+
 	@Autowired
 	private RestTemplate restTemplate;
-	
-	
+
 	@Value("${locationiq.api.key}")
 	private String apiKey;
 
 	private final String LOCATION_API = "https://us1.locationiq.com/v1/search";
 
 	private final String MATRIX_API = "https://us1.locationiq.com/v1/matrix/driving/";
-	
-	private final String REVERSE_API = "https://us1.locationiq.com/v1/reverse";
 
+	private final String REVERSE_API = "https://us1.locationiq.com/v1/reverse";
 
 	public ResponseStructure<Driver> saveDriverWithVehicle(Driver driver) {
 
-	    Vehicle vehicle = driver.getVehicle();
+		Vehicle vehicle = driver.getVehicle();
 
-	    // 🔴 VALIDATION
-	    if (vehicle.getLatitude() == null || vehicle.getLongitude() == null) {
-	        throw new RuntimeException("Latitude and Longitude are required");
-	    }
+		// 🔴 VALIDATION
+		if (vehicle.getLatitude() == null || vehicle.getLongitude() == null) {
+			throw new RuntimeException("Latitude and Longitude are required");
+		}
 
-	    // 🔹 Reverse Geocoding (lat/lon -> city)
-	    String url = REVERSE_API
-	            + "?key=" + apiKey
-	            + "&lat=" + vehicle.getLatitude()
-	            + "&lon=" + vehicle.getLongitude()
-	            + "&format=json";
+		// 🔹 Reverse Geocoding (lat/lon -> city)
+		String url = REVERSE_API + "?key=" + apiKey + "&lat=" + vehicle.getLatitude() + "&lon=" + vehicle.getLongitude()
+				+ "&format=json";
 
-	    LocationResponse location =
-	            restTemplate.getForObject(url, LocationResponse.class);
+		LocationResponse location = restTemplate.getForObject(url, LocationResponse.class);
 
-	    if (location == null || location.getAddress() == null) {
-	        throw new RuntimeException("Unable to fetch city from coordinates");
-	    }
+		if (location == null || location.getAddress() == null) {
+			throw new RuntimeException("Unable to fetch city from coordinates");
+		}
 
-	    // 🔹 Safe city extraction
-	    String city = location.getAddress().getCity();
-	    if (city == null) city = location.getAddress().getTown();
-	    if (city == null) city = location.getAddress().getCounty();
-	    if (city == null) city = location.getAddress().getState();
+		// 🔹 Safe city extraction
+		String city = location.getAddress().getCity();
+		if (city == null)
+			city = location.getAddress().getTown();
+		if (city == null)
+			city = location.getAddress().getCounty();
+		if (city == null)
+			city = location.getAddress().getState();
 
-	    if (city == null) {
-	        throw new RuntimeException("City not found from given coordinates");
-	    }
+		if (city == null) {
+			throw new RuntimeException("City not found from given coordinates");
+		}
 
-	    // 🔹 SET CITY
-	    vehicle.setCity(city);
+		// 🔹 SET CITY
+		vehicle.setCity(city);
 
-	    // 🔹 RELATIONSHIP
-	    vehicle.setDriver(driver);
-	    driver.setVehicle(vehicle);
+		// 🔹 RELATIONSHIP
+		vehicle.setDriver(driver);
+		driver.setVehicle(vehicle);
 
-	    // 🔹 SAVE (ONLY ONCE)
-	    Driver savedDriver = driverRepo.save(driver);
+		// 🔹 SAVE (ONLY ONCE)
+		Driver savedDriver = driverRepo.save(driver);
 
-	    ResponseStructure<Driver> rs = new ResponseStructure<>();
-	    rs.setStatusCode(HttpStatus.CREATED.value());
-	    rs.setMessage("Driver Saved Successfully");
-	    rs.setData(savedDriver);
+		ResponseStructure<Driver> rs = new ResponseStructure<>();
+		rs.setStatusCode(HttpStatus.CREATED.value());
+		rs.setMessage("Driver Saved Successfully");
+		rs.setData(savedDriver);
 
-	    return rs;
+		return rs;
 	}
-
 
 //	Find Diver By ID
 	public ResponseStructure<Driver> find(int id) {
@@ -178,41 +167,30 @@ public class DriverService {
 
 		return rs;
 	}
-	
-	
+
 	private byte[] generateQrCode(String upiString) {
-	    try {
-	        String qrUrl =
-	            "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + upiString;
+		try {
+			String qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + upiString;
 
-	        URL url = new URL(qrUrl);
-	        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-	        conn.setRequestMethod("GET");
+			RestTemplate restTemplate = new RestTemplate();
 
-	        InputStream is = conn.getInputStream();
-	        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			byte[] qr = restTemplate.getForObject(qrUrl, byte[].class);
 
-	        byte[] buffer = new byte[1024];
-	        int read;
-	        while ((read = is.read(buffer)) != -1) {
-	            baos.write(buffer, 0, read);
-	        }
-
-	        return baos.toByteArray();
-	    } catch (Exception e) {
-	        throw new RuntimeException("QR generation failed");
-	    }
+			return qr;
+//	        return baos.toByteArray();
+		} catch (Exception e) {
+			throw new RuntimeException("QR generation failed");
+		}
 	}
 
-	
-	//payment by cash
+	// payment by cash
 
-	public ResponseStructure<PaymentByCashDTO> confirmPaymnetByCash(int bookingId ,String paymentType) {
+	public ResponseStructure<PaymentByCashDTO> confirmPaymnetByCash(int bookingId, String paymentType) {
 		return confirmPay(bookingId, paymentType);
 
 	}
-	
-	//payment confirmation method 
+
+	// payment confirmation method
 
 	private ResponseStructure<PaymentByCashDTO> confirmPay(int bookingId, String paymentType) {
 		Booking b = bookingRepo.findById(bookingId)
@@ -257,136 +235,114 @@ public class DriverService {
 		return rs;
 	}
 
-	
-	
-	
-	
-	
-	
-	
-  
 	public ResponseStructure<BookingHistoryDTO> getDriverBookingHistory(long mobNo) {
-		
-		Driver d=	driverRepo.findByMobNo(mobNo).orElseThrow(() -> new DriverNotFoundException("Driver Not Found with Mobile: " + mobNo));
-        List<Booking> blist= d.getDblist();
-        if (blist == null || blist.isEmpty()) {
-            throw new BookingNotFoundException("No bookings found for driver");
-        }
-       return   bs.getBookingHistory(blist);
-			
-			 
+
+		Driver d = driverRepo.findByMobNo(mobNo)
+				.orElseThrow(() -> new DriverNotFoundException("Driver Not Found with Mobile: " + mobNo));
+		List<Booking> blist = d.getDblist();
+		if (blist == null || blist.isEmpty()) {
+			throw new BookingNotFoundException("No bookings found for driver");
 		}
+		return bs.getBookingHistory(blist);
+
+	}
 
 	public ResponseStructure<RideDetailsDTO> getDriverActiveBooking(long mobNo) {
-		Driver d=	driverRepo.findByMobNo(mobNo).orElseThrow(() -> new DriverNotFoundException("Driver Not Found with Mobile: " + mobNo));
-		 List<Booking> blist= d.getDblist();
-	     return bs.activeBookingHistory(blist);
+		Driver d = driverRepo.findByMobNo(mobNo)
+				.orElseThrow(() -> new DriverNotFoundException("Driver Not Found with Mobile: " + mobNo));
+		List<Booking> blist = d.getDblist();
+		return bs.activeBookingHistory(blist);
 	}
-	
-	
-	
-	
-	
-	
-
 
 	public ResponseStructure<PaymentByUpiDTO> confirmPaymentByUPI(int bookingId) {
 
-	    Booking b = bookingRepo.findById(bookingId)
-	        .orElseThrow(() -> new BookingNotFoundException("Booking not found"));
+		Booking b = bookingRepo.findById(bookingId)
+				.orElseThrow(() -> new BookingNotFoundException("Booking not found"));
 
-	    Vehicle v = b.getVehicle();
-	    Driver d = v.getDriver();
-	    Customer c = b.getCustomer();
+		Vehicle v = b.getVehicle();
+		Driver d = v.getDriver();
+		Customer c = b.getCustomer();
 
-	    double fare = b.getFare();
-
-	    // 🔹 Create UPI intent
-	    String upiString =
-	        "upi://pay?pa=" + d.getUpiId()
-	        + "&pn=" + d.getDname()
-	        + "&am=" + fare
-	        + "&cu=INR";
-
-	    // 🔹 Generate QR
-	    byte[] qrBytes = generateQrCode(upiString);
-
-	    // 🔹 Payment pending
-	    Payment p = b.getPayment();
-	    if ("PAID".equalsIgnoreCase(p.getPaymentStatus())) {
-	        throw new RuntimeException("Payment already completed");
-	    }
-	    p.setPaymentType("UPI");
-	    p.setPaymentStatus("PENDING");
-	    p.setAmount(fare);
-
-	    paymentRepo.save(p);
-
-	    // 🔹 DTO
-	    PaymentByUpiDTO dto = new PaymentByUpiDTO();
-	    dto.setBookingId(b.getId());
-	    dto.setCustomerId(c.getId());
-	    dto.setDriverId(d.getId());
-	    dto.setAmount(fare);
-	    dto.setPaymentType("UPI");
-	    dto.setPaymentStatus("PENDING");
-	    dto.setQr(qrBytes);
-
-	    ResponseStructure<PaymentByUpiDTO> rs = new ResponseStructure<>();
-	    rs.setStatusCode(HttpStatus.OK.value());
-	    rs.setMessage("Scan QR to pay via UPI");
-	    rs.setData(dto);
-
-	    return rs;
-	}
-	
-	
-	
-	public ResponseStructure<PaymentByUpiDTO> confirmUpiPaymentSuccess(int bookingId) {
-
-	    Booking b = bookingRepo.findById(bookingId)
-	        .orElseThrow(() -> new BookingNotFoundException("Booking not found"));
-
-	    b.setBookingStatus(BookingStatus.COMPLETED);
 
 	    Customer c = b.getCustomer();
 	    c.setActiveBookingFlag(false);
 	    c.setCancellationCount(0);
 
-	    Vehicle v = b.getVehicle();
-	    v.setAvlStatus("AVAILABLE");
+		double fare = b.getFare();
 
-	    Payment p = b.getPayment();
-	    p.setPaymentStatus("PAID");
-	    p.setPaymentType("UPI");
-	    p.setAmount(b.getFare());
 
-	    paymentRepo.save(p);
-	    bookingRepo.save(b);
-	    customerRepo.save(c);
-	    vehicleRepo.save(v);
+		// 🔹 Create UPI intent
+		String upiString = "upi://pay?pa=" + d.getUpiId() + "&pn=" + d.getDname() + "&am=" + fare + "&cu=INR";
 
-	    PaymentByUpiDTO dto = new PaymentByUpiDTO();
-	    dto.setBookingId(b.getId());
-	    dto.setCustomerId(c.getId());
-	    dto.setDriverId(v.getDriver().getId());
-	    dto.setAmount(b.getFare());
-	    dto.setPaymentType("UPI");
-	    dto.setPaymentStatus("PAID");
+		// 🔹 Generate QR
+//	    byte[] qrBytes = generateQrCode(upiString);
 
-	    ResponseStructure<PaymentByUpiDTO> rs = new ResponseStructure<>();
-	    rs.setStatusCode(HttpStatus.OK.value());
-	    rs.setMessage("UPI Payment Successful");
-	    rs.setData(dto);
+		// 🔹 Payment pending
+		Payment p = b.getPayment();
+		if ("PAID".equalsIgnoreCase(p.getPaymentStatus())) {
+			throw new RuntimeException("Payment already completed");
+		}
+		p.setPaymentType("UPI");
+		p.setPaymentStatus("PENDING");
+		p.setAmount(fare);
 
-	    return rs;
+		paymentRepo.save(p);
+
+		// 🔹 DTO
+		PaymentByUpiDTO dto = new PaymentByUpiDTO();
+		dto.setBookingId(b.getId());
+		dto.setCustomerId(c.getId());
+		dto.setDriverId(d.getId());
+		dto.setAmount(fare);
+		dto.setPaymentType("UPI");
+		dto.setPaymentStatus("PENDING");
+		dto.setQr(generateQrCode(upiString));
+
+		ResponseStructure<PaymentByUpiDTO> rs = new ResponseStructure<>();
+		rs.setStatusCode(HttpStatus.OK.value());
+		rs.setMessage("Scan QR to pay via UPI");
+		rs.setData(dto);
+
+		return rs;
 	}
-	
-	
-	
 
+	public ResponseStructure<PaymentByUpiDTO> confirmUpiPaymentSuccess(int bookingId) {
 
+		Booking b = bookingRepo.findById(bookingId)
+				.orElseThrow(() -> new BookingNotFoundException("Booking not found"));
 
+		b.setBookingStatus(BookingStatus.COMPLETED);
 
+		Customer c = b.getCustomer();
+		c.setActiveBookingFlag(false);
+
+		Vehicle v = b.getVehicle();
+		v.setAvlStatus("AVAILABLE");
+
+		Payment p = b.getPayment();
+		p.setPaymentStatus("PAID");
+		p.setPaymentType("UPI");
+		p.setAmount(b.getFare());
+
+		paymentRepo.save(p);
+		bookingRepo.save(b);
+		customerRepo.save(c);
+		vehicleRepo.save(v);
+
+		PaymentByUpiDTO dto = new PaymentByUpiDTO();
+		dto.setBookingId(b.getId());
+		dto.setCustomerId(c.getId());
+		dto.setDriverId(v.getDriver().getId());
+		dto.setAmount(b.getFare());
+		dto.setPaymentType("UPI");
+		dto.setPaymentStatus("PAID");
+
+		ResponseStructure<PaymentByUpiDTO> rs = new ResponseStructure<>();
+		rs.setStatusCode(HttpStatus.OK.value());
+		rs.setMessage("UPI Payment Successful");
+		rs.setData(dto);
+
+		return rs;
+	}
 
 }
