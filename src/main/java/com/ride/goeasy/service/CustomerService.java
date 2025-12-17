@@ -180,7 +180,7 @@ public class CustomerService {
 		        rs.setMessage("Booking Cencel Request Accepted");
 		        rs.setData("Booking cancelled by customer");
 
-		 
+		 return rs;
 		}
  
 		 

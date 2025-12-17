@@ -263,8 +263,7 @@ public class DriverService {
 		Driver d = v.getDriver();
 		Customer c = b.getCustomer();
 
-
-	    Customer c = b.getCustomer();
+ 
 	    c.setActiveBookingFlag(false);
 	    c.setCancellationCount(0);
 
