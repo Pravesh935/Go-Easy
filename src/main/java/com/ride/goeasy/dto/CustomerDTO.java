@@ -6,7 +6,7 @@ public class CustomerDTO {
 	    private String gender;
 	    private Long mobno;
 	    private String email;
-
+	    private String password;
 	    private double lat;   
 	    private double lon;
 		
@@ -43,6 +43,13 @@ public class CustomerDTO {
 		}
 		public void setEmail(String email) {
 			this.email = email;
+		}
+		
+		public String getPassword() {
+			return password;
+		}
+		public void setPassword(String password) {
+			this.password = password;
 		}
 		public double getLat() {
 			return lat;

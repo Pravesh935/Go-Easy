@@ -3,6 +3,7 @@ package com.ride.goeasy.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.ride.goeasy.dto.BookingHistoryDTO;
@@ -43,6 +44,8 @@ public class CustomerService {
 	   
 	   @Autowired
 	   private UserrRepo userrRepo;
+	   @Autowired
+		private PasswordEncoder passwordEncoder;
 	   
    @Autowired
      PaymentRepo pr;
@@ -63,13 +66,13 @@ public class CustomerService {
 	       
 	        Userr userr = new Userr();
 			userr.setMobno(c.getMobno());
-			userr.setPassword(c.getPassword());
+			userr.setPassword(passwordEncoder.encode(dto.getPassword()));
 			userr.setRole("CUSTOMER");
 			
 			userrRepo.save(userr);
 			c.setUserr(userr);
 			// 🔹 SAVE (ONLY ONCE)
-			Customer saveCustomer = customerRepo.save(c);
+		
 	        Customer saved = customerRepo.save(c);
 
 	        // Convert Entity → ResponseDTO
