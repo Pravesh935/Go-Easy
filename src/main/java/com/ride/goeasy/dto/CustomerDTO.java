@@ -9,7 +9,8 @@ public class CustomerDTO {
 	    private String password;
 	    private double lat;   
 	    private double lon;
-		
+	   
+      
 		public CustomerDTO() {
 			super();
 			// TODO Auto-generated constructor stub

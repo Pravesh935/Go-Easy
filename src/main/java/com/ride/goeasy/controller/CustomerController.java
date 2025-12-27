@@ -28,7 +28,7 @@ public class CustomerController {
 	    private CustomerService customerService;
 
 	    
-	    @PostMapping("/register")
+	    @PostMapping("/register/save")
 	    public ResponseStructure<CustomerResponseDTO> saveCustomer(@RequestBody CustomerDTO dto) {
 	        return customerService.saveCustomer(dto);
 	    }

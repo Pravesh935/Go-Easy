@@ -1,5 +1,6 @@
 package com.ride.goeasy.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -10,7 +11,9 @@ public class Userr {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private int id;
-	private long mobno;
+	@Column(nullable = false)
+	private long mobNo;
+	 @Column(nullable = false)
 	private String password;
 	private String role;
 
@@ -22,12 +25,12 @@ public class Userr {
 		this.id = id;
 	}
 
-	public long getMobno() {
-		return mobno;
+	public long getMobNo() {
+		return mobNo;
 	}
 
-	public void setMobno(long mobno) {
-		this.mobno = mobno;
+	public void setMobno(long mobNo) {
+		this.mobNo = mobNo;
 	}
 
 	public String getPassword() {
@@ -46,9 +49,9 @@ public class Userr {
 		this.role = role;
 	}
 
-	public Userr(long mobno, String password, String role) {
+	public Userr(long mobNo, String password, String role) {
 		super();
-		this.mobno = mobno;
+		this.mobNo = mobNo;
 		this.password = password;
 		this.role = role;
 	}
@@ -59,7 +62,7 @@ public class Userr {
 
 	@Override
 	public String toString() {
-		return "Userr [id=" + id + ", mobno=" + mobno + ", password=" + password + ", role=" + role + "]";
+		return "Userr [id=" + id + ", mobNo=" + mobNo + ", password=" + password + ", role=" + role + "]";
 	}
 
 }

@@ -95,6 +95,24 @@ public class GlobalExceptionHandler {
 
 	    return rs;
 	}
+	
+	//MobileAlreadyRegisteredException
+	
+
+    @ExceptionHandler(MobileAlreadyRegisteredException.class)
+    public ResponseEntity<ResponseStructure<String>> handleMobileAlreadyRegistered(
+            MobileAlreadyRegisteredException ex) {
+
+        ResponseStructure<String> rs = new ResponseStructure<>();
+        rs.setStatusCode(HttpStatus.BAD_REQUEST.value());
+        rs.setMessage(ex.getMessage());
+        rs.setData("FAILED");
+
+        return ResponseEntity.badRequest().body(rs);
+    }
+
+	
+	
 }
  
 		 

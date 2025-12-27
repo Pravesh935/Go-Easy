@@ -9,10 +9,21 @@ public class VehicleDetailDTO {
         private double totalAmout;
 	    private double estimatedFare;
 	    private double estimatedTime;
-	    
-	    
-	    
-	    
+	    private String vehicleModel;
+		private Integer vehicleCapacity;
+		
+		public String getVehicleModel() {
+			return vehicleModel;
+		}
+		public void setVehicleModel(String vehicleModel) {
+			this.vehicleModel = vehicleModel;
+		}
+		public Integer getVehicleCapacity() {
+			return vehicleCapacity;
+		}
+		public void setVehicleCapacity(Integer vehicleCapacity) {
+			this.vehicleCapacity = vehicleCapacity;
+		}
 		public double getPenalty() {
 			return penalty;
 		}

@@ -62,15 +62,18 @@ public class CustomerService {
 	        c.setGender(dto.getGender());
 	        c.setMobno(dto.getMobno());
 	        c.setEmail(dto.getEmail());
+	        c.setPassword(dto.getPassword());
 	        c.setCurrentLocation(dto.getLat() + "," + dto.getLon());
 	       
 	        Userr userr = new Userr();
 			userr.setMobno(c.getMobno());
-			userr.setPassword(passwordEncoder.encode(dto.getPassword()));
+			userr.setPassword(passwordEncoder.encode(dto.getPassword())); 
+		
 			userr.setRole("CUSTOMER");
 			
 			userrRepo.save(userr);
 			c.setUserr(userr);
+			c.setPassword(userr.getPassword());
 			// 🔹 SAVE (ONLY ONCE)
 		
 	        Customer saved = customerRepo.save(c);
@@ -157,6 +160,7 @@ public class CustomerService {
 	        res.setMobno(c.getMobno());
 	        res.setEmail(c.getEmail());
 	        res.setCurrentLocation(c.getCurrentLocation());
+	      
 
 	        return res;
 	    }
@@ -213,6 +217,11 @@ public class CustomerService {
 		        rs.setData("Booking cancelled by customer");
 
 		 return rs;
+		}
+
+		public String getCityFromCoordinates(double lat, double lon) {
+			// TODO Auto-generated method stub
+			return null;
 		}
  
 		 
