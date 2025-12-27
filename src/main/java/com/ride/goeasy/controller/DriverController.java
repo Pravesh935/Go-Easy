@@ -26,15 +26,14 @@ public class DriverController {
 
 	@Autowired
 	DriverService driverService;
-	
-	
+		
 	@Autowired
 	private BookingService bookingService;
 	
 
 	// to perform save operation
 
-	@PostMapping("/save/registration")
+	@PostMapping("/register")
 	public ResponseStructure<Driver> saveDriverWithVehicle(@RequestBody Driver driver) {
 		return driverService.saveDriverWithVehicle(driver);
 	}

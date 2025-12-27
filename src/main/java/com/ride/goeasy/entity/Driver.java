@@ -27,8 +27,7 @@ public class Driver {
     private String gender;
     private String mailId;
     private String password;
-   
-
+     
 	@OneToOne
     private Userr userr;
     
